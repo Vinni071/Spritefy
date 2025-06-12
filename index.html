@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="login-card">
+        <img src="https://art.pixilart.com/5241dea711b7a20.png" alt="Spritefy Logo">
+        <h1>Spritefy</h1>
+
+        <div class="EntrarBtn">
+            <button>Fazer Login</button>
+        </div>
+        <div class="sairBtn">
+            <button>Sair</button>
+        </div>
+    </div>
+
+</body>
+
+<style>
+    body {
+        min-height: 100vh;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(to right, #121212, #4a00e0);
+        font-family: sans-serif;
+    }
+
+    .login-card {
+        width: 100%;
+        max-width: 400px;
+        background-color: rgba(20, 20, 30, 0.7);
+        padding: 40px;
+        border-radius: 15px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(5px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .login-card h1 {
+        text-align: center;
+        margin-bottom: 30px;
+        color: white;
+        font-family: "Silkscreen", sans-serif;
+        font-size: 2.5em;
+        letter-spacing: 2px;
+    }
+
+    .login-card img {
+        width: 180px;
+        margin-bottom: 20px;
+        box-shadow: 0px 0px 20px black;
+        border-radius: 8px;
+    }
+
+    button {
+        width: 100%;
+        margin-bottom: 15px;
+        padding: 15px 20px;
+        background-color: #7e3ff2;
+        color: white;
+        font-size: 18px;
+        font-family: "Silkscreen", sans-serif;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        transition: background-color 0.3s, transform 0.3s;
+    }
+
+    button:hover {
+        background-color: #6a28d9;
+        transform: scale(1.03);
+    }
+</style>
+
+</html>
