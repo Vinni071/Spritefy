@@ -1,0 +1,73 @@
+body {
+    min-height: 100vh;
+    font-family: Arial, Helvetica, sans-serif;
+    background: linear-gradient(to right, black, purple);
+    margin: 0;
+    padding: 0;
+}
+
+.login {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.login h1 {
+    width: 100%;
+    text-align: center;
+    margin-bottom: 20px;
+    color: white;
+    font-family: "Silkscreen", sans-serif;
+}
+
+.login {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+}
+
+.login input{
+    margin-bottom: 20px;
+    padding: 10px;
+    border-radius: 8px;
+    border-color: black;
+    background-color: #1212;
+    font-family: "Silkscreen", sans-serif;
+    color: white;
+}
+
+.button a{
+    position: relative;
+    width: 180px;
+    height: 60px;
+    color: white;
+    font-family: "Silkscreen", sans-serif;
+    font-size: 20px;
+    text-decoration: none;
+    text-transform: uppercase;
+    text-align: center;
+    line-height: 60px;
+    letter-spacing: 2px;
+    margin: 30px;
+    padding: 20px;
+    transition: 0.8s;
+}
+
+.button a:hover {
+    background: #730bec url(pixel2.png);
+    transition-delay: 0.8s;
+    animation: animate 0.8s steps(8) forwards;
+    box-shadow: #1212 0px 0px 20px;
+}
+
+@keyframes animate {
+    0% {
+        background-position-y: 0;
+    }
+    100% {
+        background-position-y: 480px;
+    }
+}
+
