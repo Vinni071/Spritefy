@@ -173,7 +173,8 @@
             font-weight: bold;
         }
         
-        #playlist li button.drag-over {
+        /* UPDATED: Style for when dragging over a song OR a playlist */
+        #playlist li button.drag-over, #playlists-list li button.drag-over {
             border: 2px dashed #7e3ff2;
             background-color: rgba(74, 0, 224, 0.3);
         }
@@ -200,9 +201,10 @@
             bottom: 0;
             left: 0;
             right: 0;
-            background: rgba(25, 25, 25, 0.9);
+            background: linear-gradient(to right, #121212, #4a00e0);
             backdrop-filter: blur(20px);
             border-top: 1px solid rgba(255, 255, 255, 0.1);
+            opacity: 0.75;
             padding: 12px 20px;
             display: flex;
             align-items: center;
@@ -560,6 +562,7 @@
             // --- STATE ---
             let allSongs = []; // All songs from the library
             let currentDisplaySongs = []; // Songs currently shown in the playlist view
+            let userPlaylists = {}; // NEW: Local copy of user's playlists
             let currentSongIndex = -1;
             let isPlaying = false;
             let draggedItem = null;
@@ -578,12 +581,13 @@
                 }
             }
             
+            // UPDATED: Fetches playlists and stores them in the state variable
             async function fetchPlaylists() {
                  try {
                     const response = await fetch('/api/playlists');
                     if (!response.ok) throw new Error('Network response was not ok');
-                    const playlists = await response.json();
-                    renderPlaylists(playlists);
+                    userPlaylists = await response.json();
+                    renderPlaylists(userPlaylists);
                 } catch (error) {
                     console.error('Error fetching playlists:', error);
                 }
@@ -606,18 +610,19 @@
                         <span>${index + 1}. ${song.title || 'Unknown Title'}</span>
                     `;
                     
-                    // Add Drag and Drop event listeners
+                    // Add Drag and Drop event listeners for creating playlists
                     button.addEventListener('dragstart', handleDragStart);
                     button.addEventListener('dragend', handleDragEnd);
                     button.addEventListener('dragover', handleDragOver);
                     button.addEventListener('dragleave', handleDragLeave);
-                    button.addEventListener('drop', handleDrop);
+                    button.addEventListener('drop', handleDropOnSong); // UPDATED: Changed function name
                     
                     li.appendChild(button);
                     playlistElement.appendChild(li);
                 });
             }
             
+            // UPDATED: Adds D&D event listeners to playlist buttons
             function renderPlaylists(playlists) {
                 playlistsListElement.innerHTML = '';
                 for (const playlistName in playlists) {
@@ -626,6 +631,7 @@
                     button.textContent = playlistName;
                     button.dataset.name = playlistName;
                     
+                    // Listener to view songs in a playlist
                     button.addEventListener('click', () => {
                         const songsInPlaylist = playlists[playlistName].map(filename => {
                             return allSongs.find(s => s.filename === filename);
@@ -636,6 +642,11 @@
                         showAllBtn.style.display = 'inline-block';
                     });
                     
+                    // NEW: Add D&D listeners to add songs to this playlist
+                    button.addEventListener('dragover', handleDragOverOnPlaylist);
+                    button.addEventListener('dragleave', handleDragLeaveOnPlaylist);
+                    button.addEventListener('drop', handleDropOnPlaylist);
+
                     li.appendChild(button);
                     playlistsListElement.appendChild(li);
                 }
@@ -739,6 +750,9 @@
                         (song.artist && song.artist.toLowerCase().includes(query));
                 });
                 renderPlaylist(filteredSongs);
+                // NEW: Reset title when searching for better UX
+                playlistTitleEl.textContent = query ? 'Resultados da Pesquisa' : 'Músicas';
+                showAllBtn.style.display = 'none'; 
             }
             
             // --- DRAG & DROP HANDLERS ---
@@ -751,7 +765,7 @@
             
             function handleDragEnd(e) {
                 this.style.opacity = '1';
-                document.querySelectorAll('#playlist li button').forEach(btn => btn.classList.remove('drag-over'));
+                document.querySelectorAll('#playlist li button, #playlists-list li button').forEach(btn => btn.classList.remove('drag-over'));
                 draggedItem = null;
             }
 
@@ -765,36 +779,115 @@
                  this.classList.remove('drag-over');
             }
 
-            async function handleDrop(e) {
-                e.stopPropagation(); // Stops the browser from redirecting.
+            // UPDATED: This function now handles both creating a new playlist AND adding to a currently viewed one.
+            async function handleDropOnSong(e) {
+                e.stopPropagation(); 
                 e.preventDefault();
-                
                 this.classList.remove('drag-over');
 
-                if (draggedItem !== this) {
+                if (!draggedItem || draggedItem === this) return false;
+
+                const currentPlaylistName = playlistTitleEl.textContent;
+                const isViewingPlaylist = currentPlaylistName !== 'Músicas' && currentPlaylistName !== 'Resultados da Pesquisa' && userPlaylists[currentPlaylistName];
+
+                // SCENARIO 1: Add to the currently viewed playlist
+                if (isViewingPlaylist) {
+                    const draggedFilename = draggedItem.dataset.filename;
+                    let currentSongs = userPlaylists[currentPlaylistName] || [];
+
+                    if (currentSongs.includes(draggedFilename)) {
+                        alert(`A música já está na playlist '${currentPlaylistName}'.`);
+                        return false;
+                    }
+
+                    const updatedSongs = [...currentSongs, draggedFilename];
+
+                    try {
+                        const response = await fetch('/api/playlists', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ name: currentPlaylistName, songs: updatedSongs })
+                        });
+                        if (!response.ok) throw new Error('Falha ao atualizar a playlist');
+                        
+                        alert(`Música adicionada à playlist '${currentPlaylistName}'!`);
+                        await fetchPlaylists(); // Refresh all playlist data from server
+                        
+                        // Re-render the current playlist view with the new song
+                        const songsInPlaylist = updatedSongs.map(filename => {
+                            return allSongs.find(s => s.filename === filename);
+                        }).filter(Boolean);
+                        renderPlaylist(songsInPlaylist);
+
+                    } catch (error) {
+                        console.error("Error updating playlist:", error);
+                        alert("Falha ao atualizar a playlist.");
+                    }
+                } 
+                // SCENARIO 2: Create a new playlist
+                else {
                     const draggedFilename = draggedItem.dataset.filename;
                     const targetFilename = this.dataset.filename;
-
                     const playlistName = prompt("Digite o nome para a nova playlist:", "Minha Playlist");
                     if (playlistName) {
-                        const songFilenames = [draggedFilename, targetFilename];
                         try {
-                            const response = await fetch('/api/playlists', {
+                            await fetch('/api/playlists', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ name: playlistName, songs: songFilenames })
+                                body: JSON.stringify({ name: playlistName, songs: [draggedFilename, targetFilename] })
                             });
-                            if (!response.ok) throw new Error('Failed to create playlist');
-                            
-                            // Refresh playlists
-                            fetchPlaylists();
+                            fetchPlaylists(); // Refresh playlists
                         } catch(error) {
-                            console.error("Error creating playlist:", error);
                             alert("Falha ao criar a playlist.");
                         }
                     }
                 }
                 return false;
+            }
+
+            // --- NEW: Handlers for dropping a song onto an existing playlist ---
+            function handleDragOverOnPlaylist(e) {
+                if (e.preventDefault) e.preventDefault();
+                this.classList.add('drag-over');
+                e.dataTransfer.dropEffect = 'copy';
+                return false;
+            }
+            
+            function handleDragLeaveOnPlaylist(e) {
+                this.classList.remove('drag-over');
+            }
+
+            async function handleDropOnPlaylist(e) {
+                e.stopPropagation();
+                e.preventDefault();
+                this.classList.remove('drag-over');
+                if (!draggedItem) return;
+
+                const playlistName = this.dataset.name;
+                const draggedFilename = draggedItem.dataset.filename;
+                const currentSongs = userPlaylists[playlistName] || [];
+
+                if (currentSongs.includes(draggedFilename)) {
+                    alert(`A música já está na playlist '${playlistName}'.`);
+                    return;
+                }
+                
+                const updatedSongs = [...currentSongs, draggedFilename];
+
+                try {
+                    const response = await fetch('/api/playlists', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: playlistName, songs: updatedSongs })
+                    });
+                    if (!response.ok) throw new Error('Falha ao atualizar a playlist');
+                    
+                    alert(`Música adicionada à playlist '${playlistName}'!`);
+                    fetchPlaylists(); // Refresh playlists to get the latest data
+                } catch (error) {
+                    console.error("Error updating playlist:", error);
+                    alert("Falha ao atualizar a playlist.");
+                }
             }
 
 

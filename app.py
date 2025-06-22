@@ -14,7 +14,7 @@ import json
 # 1. Instale as dependências: pip install Flask mutagen
 # 2. Crie uma pasta chamada 'music' no mesmo diretório deste script.
 # 3. Coloque seus arquivos .mp3 dentro da pasta 'music'.
-# 4. Execute o script: python nome_do_seu_script.py
+# 4. Execute o script: python app.py
 # 5. Abra o arquivo HTML no seu navegador.
 # --------------------------------------------------------------------------
 
@@ -62,8 +62,9 @@ class Song:
 # instância a gerir a coleção de músicas em toda a aplicação.
 
 class MusicLibrary:
-    """Gerencia a coleção de todas as músicas."""
+    """Gerencia a coleção de todas as músicas e playlists."""
     _instance = None
+    PLAYLISTS_FILE = 'playlists.json' # NEW: File to store playlists
 
     def __new__(cls, *args, **kwargs):
         if not cls._instance:
@@ -75,19 +76,36 @@ class MusicLibrary:
         if not hasattr(self, 'initialized'):
             self.music_folder = music_folder
             self.songs = []
-            # In-memory storage for playlists
-            # A simple dictionary: { "playlist_name": ["song_filename1.mp3", "song_filename2.mp3"] }
             self.playlists = {} 
+            self._load_playlists() # NEW: Load playlists on startup
             self.scan_songs()
             self.initialized = True
             
+    def _load_playlists(self):
+        """NEW: Loads playlists from the JSON file if it exists."""
+        try:
+            if os.path.exists(self.PLAYLISTS_FILE):
+                with open(self.PLAYLISTS_FILE, 'r') as f:
+                    self.playlists = json.load(f)
+                    print(f"Playlists carregadas de {self.PLAYLISTS_FILE}")
+        except Exception as e:
+            print(f"Erro ao carregar o arquivo de playlists: {e}")
+            self.playlists = {}
+
+    def _save_playlists(self):
+        """NEW: Saves the current playlists to the JSON file."""
+        try:
+            with open(self.PLAYLISTS_FILE, 'w') as f:
+                json.dump(self.playlists, f, indent=4)
+        except Exception as e:
+            print(f"Erro ao salvar o arquivo de playlists: {e}")
+
     def scan_songs(self):
         """Verifica o diretório de músicas e preenche la lista de músicas."""
         print(f"A procurar músicas no diretório '{self.music_folder}'...")
         self.songs = []
         # --- 2. Estruturas de Dados ---
         # Usamos uma lista para armazenar as músicas e um dicionário (via glob) para pesquisa.
-        # Para uma biblioteca maior, uma tabela de hash seria mais explícita para pesquisas mais rápidas.
         for index, filepath in enumerate(glob.glob(os.path.join(self.music_folder, '*.mp3'))):
             self.songs.append(Song(filepath, index))
         print(f"Encontradas {len(self.songs)} músicas.")
@@ -112,7 +130,6 @@ library = MusicLibrary(music_folder='music')
 @app.route('/')
 def index():
     """Serve o arquivo HTML principal."""
-    # Isto assume que o seu arquivo HTML se chama 'spritefy_player.html'
     return send_from_directory('.', 'spritefy_player.html')
     
 @app.route('/api/songs', methods=['GET'])
@@ -129,27 +146,35 @@ def stream_audio(filename):
         
     return send_from_directory(library.music_folder, filename)
 
-# --- NOVOS ENDPOINTS PARA PLAYLISTS ---
+# --- Endpoint para gerenciar Playlists (Criar, Atualizar, Listar) ---
 
 @app.route('/api/playlists', methods=['GET', 'POST'])
 def handle_playlists():
-    """Endpoint para criar e listar playlists."""
+    """
+    Endpoint para criar, atualizar e listar playlists.
+    - GET: Retorna todas as playlists existentes.
+    - POST: Cria uma nova playlist ou atualiza uma existente.
+    """
     if request.method == 'POST':
         data = request.get_json()
         if not data or 'name' not in data or 'songs' not in data:
-            return jsonify({"error": "Dados inválidos"}), 400
+            return jsonify({"error": "Dados inválidos. É necessário 'name' e 'songs'."}), 400
         
         playlist_name = data['name']
         song_filenames = data['songs']
         
-        # Store or update the playlist
+        # --- LÓGICA DE CRIAÇÃO E ATUALIZAÇÃO ---
         library.playlists[playlist_name] = song_filenames
+        library._save_playlists() # NEW: Save changes to the file
+        
         print(f"Playlist '{playlist_name}' criada/atualizada com as músicas: {song_filenames}")
         
         return jsonify({"message": f"Playlist '{playlist_name}' salva com sucesso."}), 201
 
     elif request.method == 'GET':
+        # Simplesmente retorna o dicionário completo de playlists.
         return jsonify(library.playlists)
+
 
 if __name__ == '__main__':
     # Verifica se o diretório de músicas existe
