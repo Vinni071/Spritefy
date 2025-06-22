@@ -29,6 +29,13 @@
             padding-bottom: 90px;
             /* Add padding to avoid overlap with fixed player */
         }
+        
+        main {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
 
         /* Search Container */
         .search-container {
@@ -80,32 +87,69 @@
         /* Playlist Card */
         .playlist-card {
             width: 100%;
-            max-width: 400px;
+            max-width: 450px;
             background-color: rgba(20, 20, 30, 0.7);
             padding: 30px;
             border-radius: 15px;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
             backdrop-filter: blur(5px);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            margin: 20px auto;
+            margin: 10px auto;
             overflow-y: auto;
         }
 
         .playlist-card h1 {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 20px;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 2em;
+            letter-spacing: 2px;
+            text-align: center;
+        }
+        .playlist-card h2 {
             text-align: center;
             margin-bottom: 20px;
             color: white;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            font-size: 2.5em;
+            font-size: 2em;
             letter-spacing: 2px;
         }
+        
+        .playlist-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-        #playlist {
+        .show-all-btn {
+            background: #7e3ff2;
+            border: none;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            display: none; /* Hidden by default */
+        }
+        
+        .show-all-btn:hover {
+            background: #6a28d9;
+        }
+
+        #playlist, #playlists-list {
             list-style: none;
             max-height: 40vh;
         }
+        
+        #playlists-list {
+            max-height: 20vh;
+        }
 
-        #playlist li button {
+        #playlist li button, #playlists-list li button {
             margin: 5px 0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             width: 100%;
@@ -128,8 +172,13 @@
             background-color: rgba(74, 0, 224, 0.5);
             font-weight: bold;
         }
+        
+        #playlist li button.drag-over {
+            border: 2px dashed #7e3ff2;
+            background-color: rgba(74, 0, 224, 0.3);
+        }
 
-        #playlist li button:hover {
+        #playlist li button:hover, #playlists-list li button:hover {
             background-color: rgba(255, 255, 255, 0.2);
             transform: scale(1.02);
         }
@@ -373,24 +422,37 @@
 </head>
 
 <body>
-    <!-- Search Bar -->
-    <div class="search-container">
-        <div class="search-wrapper">
-            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="8"></circle>
-                <path d="m21 21-4.35-4.35"></path>
-            </svg>
-            <input type="search" id="searchInput" placeholder="Pesquisar músicas, artistas...">
+    <main>
+        <!-- Search Bar -->
+        <div class="search-container">
+            <div class="search-wrapper">
+                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
+                <input type="search" id="searchInput" placeholder="Pesquisar músicas, artistas...">
+            </div>
         </div>
-    </div>
 
-    <!-- Playlist Card -->
-    <div class="playlist-card">
-        <h1>Músicas</h1>
-        <ul id="playlist">
-            <!-- Songs will be loaded here by JavaScript -->
-        </ul>
-    </div>
+        <!-- Playlist Card -->
+        <div class="playlist-card">
+            <div class="playlist-header">
+                <h1 id="playlist-title">Músicas</h1>
+                <button id="showAllBtn" class="show-all-btn">Ver todas as músicas</button>
+            </div>
+            <ul id="playlist">
+                <!-- Songs will be loaded here by JavaScript -->
+            </ul>
+        </div>
+        
+        <!-- User's Playlists Card -->
+        <div class="playlist-card">
+            <h2>Minhas Playlists</h2>
+            <ul id="playlists-list">
+                <!-- User created playlists will be loaded here -->
+            </ul>
+        </div>
+    </main>
 
     <!-- Audio Player -->
     <div class="custom-audio-player">
@@ -474,7 +536,10 @@
             // --- DOM ELEMENTS ---
             const audioPlayer = document.getElementById('audioPlayer');
             const playlistElement = document.getElementById('playlist');
+            const playlistsListElement = document.getElementById('playlists-list');
             const searchInput = document.getElementById('searchInput');
+            const playlistTitleEl = document.getElementById('playlist-title');
+            const showAllBtn = document.getElementById('showAllBtn');
 
             // Player UI
             const playPauseBtn = document.getElementById('playPauseBtn');
@@ -493,58 +558,101 @@
             const volumeProgress = document.getElementById('volumeProgress');
 
             // --- STATE ---
-            let songs = [];
+            let allSongs = []; // All songs from the library
+            let currentDisplaySongs = []; // Songs currently shown in the playlist view
             let currentSongIndex = -1;
             let isPlaying = false;
+            let draggedItem = null;
 
             // --- API FUNCTIONS ---
-            async function fetchSongs() {
+            async function fetchAllSongs() {
                 try {
-                    // This fetch call requests the list of songs from our Python backend.
                     const response = await fetch('/api/songs');
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    songs = await response.json();
-                    renderPlaylist(songs);
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    allSongs = await response.json();
+                    currentDisplaySongs = [...allSongs];
+                    renderPlaylist(currentDisplaySongs);
                 } catch (error) {
                     console.error('Error fetching songs:', error);
                     playlistElement.innerHTML = '<li><button>Falha ao carregar as músicas, rode o backend.</button></li>';
+                }
+            }
+            
+            async function fetchPlaylists() {
+                 try {
+                    const response = await fetch('/api/playlists');
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    const playlists = await response.json();
+                    renderPlaylists(playlists);
+                } catch (error) {
+                    console.error('Error fetching playlists:', error);
                 }
             }
 
             // --- RENDER FUNCTIONS ---
             function renderPlaylist(playlist) {
                 playlistElement.innerHTML = ''; // Clear current list
+                currentDisplaySongs = playlist;
                 playlist.forEach((song, index) => {
                     const li = document.createElement('li');
                     const button = document.createElement('button');
+                    
+                    button.draggable = true; // Make the item draggable
                     button.dataset.index = index;
+                    button.dataset.filename = song.filename;
+
                     button.innerHTML = `
                         <svg class="play-indicator" viewBox="0 0 24 24" fill="currentColor"><path d="M12,2A10,10,0,1,0,22,12,10,10,0,0,0,12,2Zm-1,14a1.2,1.2,0,0,1-1.2-1.2V9.2a1.2,1.2,0,0,1,2.4,0v5.6A1.2,1.2,0,0,1,11,16Zm4.2-1.2a1.2,1.2,0,0,1-2.4,0V9.2a1.2,1.2,0,0,1,2.4,0Z"></path></svg>
                         <span>${index + 1}. ${song.title || 'Unknown Title'}</span>
                     `;
+                    
+                    // Add Drag and Drop event listeners
+                    button.addEventListener('dragstart', handleDragStart);
+                    button.addEventListener('dragend', handleDragEnd);
+                    button.addEventListener('dragover', handleDragOver);
+                    button.addEventListener('dragleave', handleDragLeave);
+                    button.addEventListener('drop', handleDrop);
+                    
                     li.appendChild(button);
                     playlistElement.appendChild(li);
                 });
             }
+            
+            function renderPlaylists(playlists) {
+                playlistsListElement.innerHTML = '';
+                for (const playlistName in playlists) {
+                    const li = document.createElement('li');
+                    const button = document.createElement('button');
+                    button.textContent = playlistName;
+                    button.dataset.name = playlistName;
+                    
+                    button.addEventListener('click', () => {
+                        const songsInPlaylist = playlists[playlistName].map(filename => {
+                            return allSongs.find(s => s.filename === filename);
+                        }).filter(Boolean); // Filter out any undefined songs
+                        
+                        renderPlaylist(songsInPlaylist);
+                        playlistTitleEl.textContent = playlistName;
+                        showAllBtn.style.display = 'inline-block';
+                    });
+                    
+                    li.appendChild(button);
+                    playlistsListElement.appendChild(li);
+                }
+            }
 
             // --- PLAYER LOGIC ---
             function loadSong(index) {
-                if (index < 0 || index >= songs.length) return;
+                if (index < 0 || index >= currentDisplaySongs.length) return;
 
                 currentSongIndex = index;
-                const song = songs[index];
+                const song = currentDisplaySongs[index];
 
-                // Set the audio source to stream the file from the backend
                 audioPlayer.src = `/api/stream/${song.filename}`;
-
-                // Update UI
                 trackTitle.textContent = song.title || 'Unknown Title';
                 trackArtist.textContent = song.artist || 'Unknown Artist';
                 albumCover.src = song.album_art_url || `https://placehold.co/60x60/4a00e0/FFF?text=${song.title[0] || 'S'}`;
 
-                // Update playlist UI
                 document.querySelectorAll('#playlist li button').forEach(btn => {
                     btn.classList.remove('playing');
                 });
@@ -557,10 +665,16 @@
             }
 
             function playSong() {
-                isPlaying = true;
-                audioPlayer.play();
-                playIcon.style.display = 'none';
-                pauseIcon.style.display = 'block';
+                if(currentSongIndex === -1 && currentDisplaySongs.length > 0) {
+                    loadSong(0);
+                    return;
+                }
+                if(currentSongIndex !== -1) {
+                    isPlaying = true;
+                    audioPlayer.play();
+                    playIcon.style.display = 'none';
+                    pauseIcon.style.display = 'block';
+                }
             }
 
             function pauseSong() {
@@ -572,7 +686,7 @@
 
             function playNext() {
                 let newIndex = currentSongIndex + 1;
-                if (newIndex >= songs.length) {
+                if (newIndex >= currentDisplaySongs.length) {
                     newIndex = 0; // Loop back to the start
                 }
                 loadSong(newIndex);
@@ -581,7 +695,7 @@
             function playPrev() {
                 let newIndex = currentSongIndex - 1;
                 if (newIndex < 0) {
-                    newIndex = songs.length - 1; // Loop to the end
+                    newIndex = currentDisplaySongs.length - 1; // Loop to the end
                 }
                 loadSong(newIndex);
             }
@@ -590,7 +704,6 @@
                 if (audioPlayer.duration) {
                     const progressPercent = (audioPlayer.currentTime / audioPlayer.duration) * 100;
                     progressBar.style.width = `${progressPercent}%`;
-
                     currentTimeEl.textContent = formatTime(audioPlayer.currentTime);
                     durationEl.textContent = formatTime(audioPlayer.duration);
                 }
@@ -621,20 +734,73 @@
 
             function filterPlaylist() {
                 const query = searchInput.value.toLowerCase();
-                const filteredSongs = songs.filter(song => {
+                const filteredSongs = allSongs.filter(song => {
                     return (song.title && song.title.toLowerCase().includes(query)) ||
                         (song.artist && song.artist.toLowerCase().includes(query));
                 });
                 renderPlaylist(filteredSongs);
             }
+            
+            // --- DRAG & DROP HANDLERS ---
+            function handleDragStart(e) {
+                draggedItem = this;
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/html', this.innerHTML);
+                setTimeout(() => this.style.opacity = '0.5', 0);
+            }
+            
+            function handleDragEnd(e) {
+                this.style.opacity = '1';
+                document.querySelectorAll('#playlist li button').forEach(btn => btn.classList.remove('drag-over'));
+                draggedItem = null;
+            }
+
+            function handleDragOver(e) {
+                if (e.preventDefault) e.preventDefault();
+                this.classList.add('drag-over');
+                return false;
+            }
+            
+            function handleDragLeave(e) {
+                 this.classList.remove('drag-over');
+            }
+
+            async function handleDrop(e) {
+                e.stopPropagation(); // Stops the browser from redirecting.
+                e.preventDefault();
+                
+                this.classList.remove('drag-over');
+
+                if (draggedItem !== this) {
+                    const draggedFilename = draggedItem.dataset.filename;
+                    const targetFilename = this.dataset.filename;
+
+                    const playlistName = prompt("Digite o nome para a nova playlist:", "Minha Playlist");
+                    if (playlistName) {
+                        const songFilenames = [draggedFilename, targetFilename];
+                        try {
+                            const response = await fetch('/api/playlists', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ name: playlistName, songs: songFilenames })
+                            });
+                            if (!response.ok) throw new Error('Failed to create playlist');
+                            
+                            // Refresh playlists
+                            fetchPlaylists();
+                        } catch(error) {
+                            console.error("Error creating playlist:", error);
+                            alert("Falha ao criar a playlist.");
+                        }
+                    }
+                }
+                return false;
+            }
+
 
             // --- EVENT LISTENERS ---
             playPauseBtn.addEventListener('click', () => {
-                if (currentSongIndex === -1 && songs.length > 0) {
-                    loadSong(0);
-                } else {
-                    isPlaying ? pauseSong() : playSong();
-                }
+                isPlaying ? pauseSong() : playSong();
             });
 
             nextBtn.addEventListener('click', playNext);
@@ -655,10 +821,17 @@
             });
 
             searchInput.addEventListener('input', filterPlaylist);
+            
+            showAllBtn.addEventListener('click', () => {
+                renderPlaylist(allSongs);
+                playlistTitleEl.textContent = 'Músicas';
+                showAllBtn.style.display = 'none';
+            });
 
 
             // --- INITIALIZATION ---
-            fetchSongs();
+            fetchAllSongs();
+            fetchPlaylists();
         });
     </script>
 </body>

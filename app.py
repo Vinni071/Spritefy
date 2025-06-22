@@ -75,6 +75,9 @@ class MusicLibrary:
         if not hasattr(self, 'initialized'):
             self.music_folder = music_folder
             self.songs = []
+            # In-memory storage for playlists
+            # A simple dictionary: { "playlist_name": ["song_filename1.mp3", "song_filename2.mp3"] }
+            self.playlists = {} 
             self.scan_songs()
             self.initialized = True
             
@@ -125,6 +128,28 @@ def stream_audio(filename):
         return "Música não encontrada", 404
         
     return send_from_directory(library.music_folder, filename)
+
+# --- NOVOS ENDPOINTS PARA PLAYLISTS ---
+
+@app.route('/api/playlists', methods=['GET', 'POST'])
+def handle_playlists():
+    """Endpoint para criar e listar playlists."""
+    if request.method == 'POST':
+        data = request.get_json()
+        if not data or 'name' not in data or 'songs' not in data:
+            return jsonify({"error": "Dados inválidos"}), 400
+        
+        playlist_name = data['name']
+        song_filenames = data['songs']
+        
+        # Store or update the playlist
+        library.playlists[playlist_name] = song_filenames
+        print(f"Playlist '{playlist_name}' criada/atualizada com as músicas: {song_filenames}")
+        
+        return jsonify({"message": f"Playlist '{playlist_name}' salva com sucesso."}), 201
+
+    elif request.method == 'GET':
+        return jsonify(library.playlists)
 
 if __name__ == '__main__':
     # Verifica se o diretório de músicas existe
