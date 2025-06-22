@@ -1,234 +1,98 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
-
+    <title>Inicio</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
-
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            min-height: 100vh;
-            font-family: Arial, Helvetica, sans-serif;
-            background: linear-gradient(to right, #1c1c1c, #6d07cc);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-
-        a{
-            text-decoration: none;
-            color: white;
-        }
-
-        .login-card {
-            width: 100%;
-            max-width: 400px;
-            background-color: rgba(20, 20, 30, 0.7);
-            padding: 40px;
-            border-radius: 15px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .login-card h1 {
-            text-align: center;
-            margin-bottom: 30px;
-            color: white;
-            font-family: "Silkscreen", sans-serif;
-            font-size: 2.5em;
-            letter-spacing: 2px;
-        }
-
-        .input-group {
-            margin-bottom: 25px;
-            position: relative;
-        }
-
-        .input-group label {
-            display: block;
-            color: #ccc;
-            margin-bottom: 8px;
-            font-size: 0.9em;
-            font-family: "Silkscreen", sans-serif;
-        }
-
-        .input-group input {
-            width: 100%;
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid #555;
-            background-color: rgba(0, 0, 0, 0.3);
-            font-family: "Silkscreen", sans-serif;
-            color: white;
-            font-size: 1em;
-            transition: border-color 0.3s, box-shadow 0.3s;
-        }
-
-        .input-group input:focus {
-            outline: none;
-            border-color: #730bec;
-            box-shadow: 0 0 10px rgba(115, 11, 236, 0.7);
-        }
-
-        .input-group input::placeholder {
-            color: #888;
-            font-family: Arial, Helvetica, sans-serif;
-        }
-
-        .cta-button {
-            width: 100%;
-            border: none;
-            border-radius: 8px;
-            background-color: transparent;
-            padding: 15px;
-            color: white;
-            font-family: "Silkscreen", sans-serif;
-            font-size: 1.2em;
-            text-transform: uppercase;
-            text-align: center;
-            letter-spacing: 2px;
-            cursor: pointer;
-            transition: 0.8s;
-        }
-
-        .cta-button:hover {
-            /* OBS: Para a animação funcionar, a imagem 'pixel2.png' precisa estar na mesma pasta do seu arquivo HTML. */
-            background: #730bec url(pixel2.png);
-            transition-delay: 0.8s;
-            animation: animate 0.8s steps(8) forwards;
-            box-shadow: 0 0 20px rgba(115, 11, 236, 0.8);
-        }
-
-        @keyframes animate {
-            0% {
-                background-position-y: 0;
-            }
-
-            100% {
-                background-position-y: -480px;
-
-            }
-        }
-
-        .register-link {
-            text-align: center;
-            margin-top: 20px;
-            color: #ccc;
-        }
-
-        .register-link a {
-            color: #730bec;
-            text-decoration: none;
-            font-weight: bold;
-            transition: color 0.3s;
-        }
-
-        .register-link a:hover {
-            color: #9d4edd;
-            text-decoration: underline;
-        }
-
-        /* ---- RESPONSIVIDADE ---- */
-
-        @media (max-width: 480px) {
-            .login-card {
-                padding: 25px;
-
-            }
-
-            .login-card h1 {
-                font-size: 2em;
-
-            }
-        }
-    </style>
 </head>
 
 <body>
     <div class="login-card">
-        <form>
-            <h1>Login</h1>
+        <img src="ChatGPT Image 9 de jun. de 2025, 21_21_11.png" alt="Spritefy Logo">
+        <h1>Spritefy</h1>
 
-            <div class="input-group">
-                <label for="username">Usuário</label>
-                <input id="username" type="text" placeholder="Digite seu usuário" required>
-            </div>
-
-            <div class="input-group">
-                <label for="password">Senha</label>
-                <input id="password" type="password" placeholder="Digite sua senha" required>
-            </div>
-
-            <button type="submit" class="cta-button"><a href="spritefy_player.html">Entrar</a></button>
-
-            <div class="register-link">
-                <p>Não tem uma conta? <a href="#">Registre-se</a></p>
-            </div>
-        </form>
+        <div class="EntrarBtn">
+            <button><a href="login.html">Fazer Login</a></button>
+        </div>
+        <div class="sairBtn">
+            <button>Sair</button>
+        </div>
     </div>
+
 </body>
 
-<!-- SCRIPT PARA CONECTAR COM O BACKEND -->
-<script>
-    // Seleciona o formulário e a caixa de mensagens
-    const loginForm = document.getElementById('login-form');
-    const messageBox = document.getElementById('message');
+<style>
+    body {
+        min-height: 100vh;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(to right, #121212, #4a00e0);
+        font-family: sans-serif;
+    }
 
-    // Adiciona um "ouvinte" para o evento de 'submit' do formulário
-    loginForm.addEventListener('submit', async (event) => {
-        // Previne o comportamento padrão do formulário (que é recarregar a página)
-        event.preventDefault();
+    .login-card {
+        width: 100%;
+        max-width: 400px;
+        background-color: rgba(20, 20, 30, 0.7);
+        padding: 40px;
+        border-radius: 15px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(5px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
 
-        // Pega os valores dos campos de input
-        const username = document.getElementById('username').value;
-        const password = document.getElementById('password').value;
+    .login-card h1 {
+        text-align: center;
+        margin-bottom: 30px;
+        color: white;
+        font-family: "Silkscreen", sans-serif;
+        font-size: 2.5em;
+        letter-spacing: 2px;
+    }
 
-        // Mostra/esconde a caixa de mensagem
-        messageBox.style.display = 'none';
-        messageBox.textContent = '';
+    .login-card img {
+        width: 180px;
+        margin-bottom: 20px;
+        box-shadow: 0px 0px 20px black;
+        border-radius: 8px;
+    }
 
-        try {
-            // Envia os dados para o backend usando a API Fetch
-            const response = await fetch('http://127.0.0.1:5000/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                // Converte os dados do JS para uma string JSON
-                body: JSON.stringify({ username: username, password: password })
-            });
+    button {
+        width: 100%;
+        margin-bottom: 15px;
+        padding: 15px 20px;
+        background-color: #7e3ff2;
+        color: white;
+        font-size: 18px;
+        font-family: "Silkscreen", sans-serif;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        transition: background-color 0.3s, transform 0.3s;
+    }
 
-            // Converte a resposta do backend para um objeto JS
-            const result = await response.json();
+    a {
+        text-decoration: none;
+        color: white;
+    }
 
-            // Define a mensagem e a classe (cor) da caixa de mensagem
-            messageBox.textContent = result.message;
-            if (response.ok) { // status 2xx (sucesso)
-                messageBox.className = 'success';
-            } else { // status 4xx/5xx (erro)
-                messageBox.className = 'error';
-            }
-
-        } catch (error) {
-            // Se houver um erro de rede (ex: backend desligado)
-            console.error('Erro ao conectar com o servidor:', error);
-            messageBox.textContent = 'Erro de conexão. O servidor está offline?';
-            messageBox.className = 'error';
-        }
-    });
-</script>
+    button:hover {
+        background-color: #6a28d9;
+        transform: scale(1.03);
+    }
+</style>
 
 </html>
