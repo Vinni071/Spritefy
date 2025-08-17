@@ -1,16 +1,16 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Spritefy Player</title>
-    <!-- Using Google Fonts for "Silkscreen" -->
+    <!-- A utilizar as Google Fonts para "Silkscreen" -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        /* General Styles */
+        /* Estilos Gerais */
         * {
             margin: 0;
             padding: 0;
@@ -24,10 +24,8 @@
             display: flex;
             flex-direction: column;
             justify-content: flex-start;
-            /* Changed to align content at the start */
             color: #fff;
-            padding-bottom: 90px;
-            /* Add padding to avoid overlap with fixed player */
+            padding-bottom: 90px; /* Adicionar preenchimento para evitar sobreposição com o leitor fixo */
         }
         
         main {
@@ -35,14 +33,17 @@
             flex-direction: column;
             align-items: center;
             width: 100%;
+            padding: 10px;
         }
 
-        /* Search Container */
-        .search-container {
-            padding: 20px;
+        /* Contentor de Pesquisa e Status */
+        .header-container {
+            padding: 10px 20px;
             width: 100%;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
             z-index: 10;
         }
 
@@ -83,40 +84,37 @@
             background-color: rgba(255, 255, 255, 0.25);
             box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
         }
+        
+        #scanStatus {
+            font-size: 12px;
+            color: #ccc;
+            background-color: rgba(0,0,0,0.3);
+            padding: 5px 10px;
+            border-radius: 10px;
+            display: none; /* Começa escondido */
+            cursor: pointer;
+        }
 
-        /* Playlist Card */
+        /* Cartão da Playlist e outros cartões */
         .playlist-card {
             width: 100%;
             max-width: 450px;
             background-color: rgba(20, 20, 30, 0.7);
-            padding: 30px;
+            padding: 20px;
             border-radius: 15px;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
             backdrop-filter: blur(5px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             margin: 10px auto;
-            overflow-y: auto;
         }
-
-        .playlist-card h1 {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 100%;
+        
+        .playlist-card h1, .playlist-card h2 {
             margin-bottom: 20px;
             color: white;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            font-size: 2em;
-            letter-spacing: 2px;
+            font-size: 1.8em;
+            letter-spacing: 1px;
             text-align: center;
-        }
-        .playlist-card h2 {
-            text-align: center;
-            margin-bottom: 20px;
-            color: white;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            font-size: 2em;
-            letter-spacing: 2px;
         }
         
         .playlist-header {
@@ -133,23 +131,25 @@
             border-radius: 20px;
             cursor: pointer;
             font-size: 12px;
-            display: none; /* Hidden by default */
+            display: none; /* Oculto por defeito */
         }
         
         .show-all-btn:hover {
             background: #6a28d9;
         }
-
-        #playlist, #playlists-list {
+        
+        #playlist, #playlists-list, #history-list {
             list-style: none;
+            padding-left: 0;
             max-height: 40vh;
+            overflow-y: auto;
         }
         
-        #playlists-list {
+        #playlists-list, #history-list {
             max-height: 20vh;
         }
 
-        #playlist li button, #playlists-list li button {
+        #playlist li button, #playlists-list li button, #history-list li button {
             margin: 5px 0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             width: 100%;
@@ -165,7 +165,7 @@
             cursor: pointer;
             display: flex;
             align-items: center;
-
+            gap: 10px;
         }
 
         #playlist li button.playing {
@@ -173,13 +173,12 @@
             font-weight: bold;
         }
         
-        /* UPDATED: Style for when dragging over a song OR a playlist */
         #playlist li button.drag-over, #playlists-list li button.drag-over {
             border: 2px dashed #7e3ff2;
             background-color: rgba(74, 0, 224, 0.3);
         }
 
-        #playlist li button:hover, #playlists-list li button:hover {
+        #playlist li button:hover, #playlists-list li button:hover, #history-list li button:hover {
             background-color: rgba(255, 255, 255, 0.2);
             transform: scale(1.02);
         }
@@ -194,8 +193,7 @@
             display: inline-block;
         }
 
-
-        /* Audio Player */
+        /* Estilos do Leitor de Áudio (sem alterações) */
         .custom-audio-player {
             position: fixed;
             bottom: 0;
@@ -204,7 +202,7 @@
             background: linear-gradient(to right, #121212, #4a00e0);
             backdrop-filter: blur(20px);
             border-top: 1px solid rgba(255, 255, 255, 0.1);
-            opacity: 0.75;
+            opacity: 0.9;
             padding: 12px 20px;
             display: flex;
             align-items: center;
@@ -212,221 +210,14 @@
             height: 90px;
             z-index: 100;
         }
-
-        /* Player Left Section */
-        .player-left {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            flex: 1;
-            min-width: 180px;
-        }
-
-        .album-cover img {
-            width: 56px;
-            height: 56px;
-            border-radius: 8px;
-            object-fit: cover;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
-        }
-
-        .track-info h3 {
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 4px;
-            color: #fff;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .track-info p {
-            font-size: 12px;
-            color: #b3b3b3;
-        }
-
-        /* Player Center Section */
-        .player-center {
-            flex: 2;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            max-width: 720px;
-        }
-
-        .controls {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            margin-bottom: 8px;
-        }
-
-        .control-button {
-            background: none;
-            border: none;
-            color: #b3b3b3;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            padding: 0;
-        }
-
-        .control-button svg {
-            width: 22px;
-            height: 22px;
-            fill: currentColor;
-        }
-
-        .control-button:hover {
-            color: #4a00e0;
-        }
-
-        .play-pause-button {
-            background-color: #fff;
-            color: #000;
-            border-radius: 50%;
-            width: 36px;
-            height: 36px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .play-pause-button:hover {
-            transform: scale(1.05);
-        }
-
-        .play-pause-button svg {
-            width: 20px;
-            height: 20px;
-        }
-
-        .play-icon,
-        .pause-icon {
-            fill: #000;
-        }
-
-        .pause-icon {
-            display: none;
-        }
-
-
-        /* Progress Container */
-        .progress-container {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            width: 100%;
-        }
-
-        .current-time,
-        .duration {
-            font-size: 11px;
-            color: #b3b3b3;
-            min-width: 35px;
-            text-align: center;
-        }
-
-        .progress-bar-container {
-            flex: 1;
-            height: 4px;
-            background-color: #535353;
-            border-radius: 2px;
-            position: relative;
-            cursor: pointer;
-        }
-
-        .progress-bar {
-            height: 100%;
-            background-color: #fff;
-            border-radius: 2px;
-            width: 0%;
-            position: relative;
-        }
-
-        .progress-bar-container:hover .progress-bar {
-            background-color: #4a00e0;
-        }
-
-        .progress-bar-container:hover .progress-handle {
-            opacity: 1;
-        }
-
-        .progress-handle {
-            position: absolute;
-            top: 50%;
-            right: 0;
-            transform: translate(50%, -50%);
-            width: 12px;
-            height: 12px;
-            background-color: #fff;
-            border-radius: 50%;
-            opacity: 0;
-            transition: opacity 0.2s ease;
-        }
-
-
-        /* Player Right Section */
-        .player-right {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            flex: 1;
-            min-width: 180px;
-            justify-content: flex-end;
-        }
-
-        .volume-bar-container {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .volume-bar {
-            width: 100px;
-            height: 4px;
-            background-color: #535353;
-            border-radius: 2px;
-            position: relative;
-            cursor: pointer;
-        }
-
-        .volume-progress {
-            height: 100%;
-            background-color: #fff;
-            border-radius: 2px;
-            width: 100%;
-        }
-
-        /* Responsive Design */
-        @media (max-width: 768px) {
-
-            .player-left .track-info,
-            .player-right .volume-bar-container {
-                display: none;
-            }
-
-            .player-left {
-                flex: 0;
-                min-width: auto;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .search-wrapper input {
-                max-width: 280px;
-            }
-
-            .playlist-card {
-                padding: 20px;
-            }
-        }
+        .player-left{display:flex;align-items:center;gap:15px;flex:1;min-width:180px}.album-cover img{width:56px;height:56px;border-radius:8px;object-fit:cover;box-shadow:0 4px 10px rgba(0,0,0,.5)}.track-info h3{font-size:14px;font-weight:600;margin-bottom:4px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.track-info p{font-size:12px;color:#b3b3b3}.player-center{flex:2;display:flex;flex-direction:column;align-items:center;max-width:720px}.controls{display:flex;align-items:center;gap:16px;margin-bottom:8px}.control-button{background:0 0;border:none;color:#b3b3b3;cursor:pointer;transition:all .2s ease;padding:0}.control-button svg{width:22px;height:22px;fill:currentColor}.control-button:hover{color:#4a00e0}.play-pause-button{background-color:#fff;color:#000;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center}.play-pause-button:hover{transform:scale(1.05)}.play-pause-button svg{width:20px;height:20px}.play-icon,.pause-icon{fill:#000}.pause-icon{display:none}.progress-container{display:flex;align-items:center;gap:10px;width:100%}.current-time,.duration{font-size:11px;color:#b3b3b3;min-width:35px;text-align:center}.progress-bar-container{flex:1;height:4px;background-color:#535353;border-radius:2px;position:relative;cursor:pointer}.progress-bar{height:100%;background-color:#fff;border-radius:2px;width:0;position:relative}.progress-bar-container:hover .progress-bar{background-color:#4a00e0}.progress-bar-container:hover .progress-handle{opacity:1}.progress-handle{position:absolute;top:50%;right:0;transform:translate(50%,-50%);width:12px;height:12px;background-color:#fff;border-radius:50%;opacity:0;transition:opacity .2s ease}.player-right{display:flex;align-items:center;gap:15px;flex:1;min-width:180px;justify-content:flex-end}.volume-bar-container{display:flex;align-items:center;gap:8px}.volume-bar{width:100px;height:4px;background-color:#535353;border-radius:2px;position:relative;cursor:pointer}.volume-progress{height:100%;background-color:#fff;border-radius:2px;width:100%}@media (max-width:768px){.player-left .track-info,.player-right .volume-bar-container{display:none}.player-left{flex:0;min-width:auto}}@media (max-width:480px){.search-wrapper input{max-width:280px}.playlist-card{padding:20px}}
     </style>
 </head>
 
 <body>
     <main>
-        <!-- Search Bar -->
-        <div class="search-container">
+        <!-- Cabeçalho com Pesquisa e Status -->
+        <div class="header-container">
             <div class="search-wrapper">
                 <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="11" cy="11" r="8"></circle>
@@ -434,116 +225,95 @@
                 </svg>
                 <input type="search" id="searchInput" placeholder="Pesquisar músicas, artistas...">
             </div>
+            <div id="scanStatus" title="Clique para re-sincronizar"></div>
         </div>
 
-        <!-- Playlist Card -->
+        <!-- Cartão da Playlist Principal -->
         <div class="playlist-card">
             <div class="playlist-header">
                 <h1 id="playlist-title">Músicas</h1>
                 <button id="showAllBtn" class="show-all-btn">Ver todas as músicas</button>
             </div>
             <ul id="playlist">
-                <!-- Songs will be loaded here by JavaScript -->
+                <!-- As músicas serão carregadas aqui pelo JavaScript -->
             </ul>
         </div>
         
-        <!-- User's Playlists Card -->
+        <!-- Cartão de Playlists do Utilizador -->
         <div class="playlist-card">
             <h2>Minhas Playlists</h2>
             <ul id="playlists-list">
-                <!-- User created playlists will be loaded here -->
+                <!-- As playlists criadas pelo utilizador serão carregadas aqui -->
+            </ul>
+        </div>
+        
+        <!-- NOVO: Cartão de Histórico de Reprodução -->
+        <div class="playlist-card">
+            <h2>Histórico</h2>
+            <ul id="history-list">
+                <!-- O histórico será carregado aqui -->
             </ul>
         </div>
     </main>
 
-    <!-- Audio Player -->
+    <!-- Leitor de Áudio -->
     <div class="custom-audio-player">
-        <!-- Left: Track Info -->
         <div class="player-left">
             <div class="album-cover">
-                <img id="albumCover" src="https://placehold.co/60x60/121212/FFF?text=Sfy" alt="Album Cover">
+                <img id="albumCover" src="https://placehold.co/60x60/121212/FFF?text=Sfy" alt="Capa do Álbum">
             </div>
             <div class="track-info">
                 <h3 id="trackTitle">Selecione uma música</h3>
                 <p id="trackArtist">Spritefy Player</p>
             </div>
         </div>
-
-        <!-- Center: Controls & Progress -->
         <div class="player-center">
             <div class="controls">
-                <button class="control-button" id="shuffleBtn" title="Shuffle">
-                    <svg viewBox="0 0 24 24">
-                        <path
-                            d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z">
-                        </path>
-                    </svg>
+                <button class="control-button" id="prevBtn" title="Anterior">
+                    <svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"></path></svg>
                 </button>
-                <button class="control-button" id="prevBtn" title="Previous">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"></path>
-                    </svg>
+                <button class="control-button play-pause-button" id="playPauseBtn" title="Tocar/Pausar">
+                    <svg class="play-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                    <svg class="pause-icon" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg>
                 </button>
-                <button class="control-button play-pause-button" id="playPauseBtn" title="Play/Pause">
-                    <svg class="play-icon" viewBox="0 0 24 24">
-                        <path d="M8 5v14l11-7z"></path>
-                    </svg>
-                    <svg class="pause-icon" viewBox="0 0 24 24">
-                        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path>
-                    </svg>
-                </button>
-                <button class="control-button" id="nextBtn" title="Next">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"></path>
-                    </svg>
-                </button>
-                <button class="control-button" id="repeatBtn" title="Repeat">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"></path>
-                    </svg>
+                <button class="control-button" id="nextBtn" title="Próxima">
+                    <svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"></path></svg>
                 </button>
             </div>
             <div class="progress-container">
                 <span class="current-time" id="currentTime">0:00</span>
                 <div class="progress-bar-container" id="progressBarContainer">
-                    <div class="progress-bar" id="progressBar">
-                        <div class="progress-handle"></div>
-                    </div>
+                    <div class="progress-bar" id="progressBar"><div class="progress-handle"></div></div>
                 </div>
                 <span class="duration" id="duration">0:00</span>
             </div>
         </div>
-
-        <!-- Right: Volume & Other Controls -->
         <div class="player-right">
             <div class="volume-bar-container">
                 <button class="control-button" id="volumeBtn" title="Volume">
-                    <svg viewBox="0 0 24 24">
-                        <path
-                            d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z">
-                        </path>
-                    </svg>
+                    <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"></path></svg>
                 </button>
                 <div class="volume-bar" id="volumeBarContainer">
                     <div class="volume-progress" id="volumeProgress"></div>
                 </div>
             </div>
         </div>
-
         <audio id="audioPlayer"></audio>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // --- DOM ELEMENTS ---
+            // --- ELEMENTOS DO DOM ---
             const audioPlayer = document.getElementById('audioPlayer');
             const playlistElement = document.getElementById('playlist');
             const playlistsListElement = document.getElementById('playlists-list');
+            const historyListElement = document.getElementById('history-list'); // NOVO
             const searchInput = document.getElementById('searchInput');
             const playlistTitleEl = document.getElementById('playlist-title');
             const showAllBtn = document.getElementById('showAllBtn');
+            const scanStatusEl = document.getElementById('scanStatus'); // NOVO
 
-            // Player UI
+            // UI do Leitor
             const playPauseBtn = document.getElementById('playPauseBtn');
             const playIcon = playPauseBtn.querySelector('.play-icon');
             const pauseIcon = playPauseBtn.querySelector('.pause-icon');
@@ -559,70 +329,110 @@
             const volumeBarContainer = document.getElementById('volumeBarContainer');
             const volumeProgress = document.getElementById('volumeProgress');
 
-            // --- STATE ---
-            let allSongs = []; // All songs from the library
-            let currentDisplaySongs = []; // Songs currently shown in the playlist view
-            let userPlaylists = {}; // NEW: Local copy of user's playlists
+            // --- ESTADO ---
+            let allSongs = [];
+            let currentDisplaySongs = [];
+            let userPlaylists = {};
             let currentSongIndex = -1;
             let isPlaying = false;
             let draggedItem = null;
+            let scanInterval;
 
-            // --- API FUNCTIONS ---
-            async function fetchAllSongs() {
+            // --- FUNÇÕES DA API E LÓGICA DE SINCRONIZAÇÃO ---
+            async function checkScanStatus() {
                 try {
-                    const response = await fetch('/api/songs');
-                    if (!response.ok) throw new Error('Network response was not ok');
-                    allSongs = await response.json();
-                    currentDisplaySongs = [...allSongs];
-                    renderPlaylist(currentDisplaySongs);
+                    const response = await fetch('/api/scan-status');
+                    const status = await response.json();
+                    scanStatusEl.style.display = 'block';
+                    
+                    if (status.is_scanning) {
+                        scanStatusEl.textContent = 'Sincronizando biblioteca...';
+                    } else {
+                        scanStatusEl.textContent = `${status.song_count} músicas na biblioteca. Sincronizado.`;
+                        // Se a varredura terminou, atualiza a lista de músicas se necessário
+                        if (allSongs.length !== status.song_count) {
+                            fetchAllSongs();
+                        }
+                        clearInterval(scanInterval); // Para a verificação contínua
+                        scanInterval = null;
+                    }
                 } catch (error) {
-                    console.error('Error fetching songs:', error);
-                    playlistElement.innerHTML = '<li><button>Falha ao carregar as músicas, rode o backend.</button></li>';
+                    scanStatusEl.textContent = 'Erro de conexão com o servidor.';
+                    console.error('Erro ao verificar status da varredura:', error);
                 }
             }
             
-            // UPDATED: Fetches playlists and stores them in the state variable
-            async function fetchPlaylists() {
-                 try {
-                    const response = await fetch('/api/playlists');
-                    if (!response.ok) throw new Error('Network response was not ok');
-                    userPlaylists = await response.json();
-                    renderPlaylists(userPlaylists);
+            async function triggerScan() {
+                try {
+                    await fetch('/api/scan', { method: 'POST' });
+                    if (!scanInterval) {
+                       scanInterval = setInterval(checkScanStatus, 3000); // Verifica a cada 3 segundos
+                    }
                 } catch (error) {
-                    console.error('Error fetching playlists:', error);
+                    console.error('Erro ao iniciar a varredura:', error);
                 }
             }
 
-            // --- RENDER FUNCTIONS ---
+            async function fetchAllSongs() {
+                try {
+                    const response = await fetch('/api/songs');
+                    if (!response.ok) throw new Error('A resposta da rede não foi bem-sucedida');
+                    allSongs = await response.json();
+                    // Se o utilizador não estiver a ver uma playlist ou resultados de pesquisa, atualiza a lista principal
+                    if (playlistTitleEl.textContent === 'Músicas') {
+                        renderPlaylist(allSongs);
+                    }
+                } catch (error) {
+                    console.error('Erro ao obter as músicas:', error);
+                }
+            }
+            
+            async function fetchPlaylists() {
+                 try {
+                    const response = await fetch('/api/playlists');
+                    userPlaylists = await response.json();
+                    renderPlaylists(userPlaylists);
+                } catch (error) {
+                    console.error('Erro ao obter as playlists:', error);
+                }
+            }
+
+            async function fetchHistory() {
+                try {
+                    const response = await fetch('/api/play-history');
+                    const history = await response.json();
+                    renderHistory(history);
+                } catch (error) {
+                    console.error('Erro ao obter o histórico:', error);
+                }
+            }
+
+            // --- FUNÇÕES DE RENDERIZAÇÃO ---
             function renderPlaylist(playlist) {
-                playlistElement.innerHTML = ''; // Clear current list
+                playlistElement.innerHTML = '';
                 currentDisplaySongs = playlist;
                 playlist.forEach((song, index) => {
                     const li = document.createElement('li');
                     const button = document.createElement('button');
-                    
-                    button.draggable = true; // Make the item draggable
+                    button.draggable = true;
                     button.dataset.index = index;
                     button.dataset.filename = song.filename;
 
                     button.innerHTML = `
                         <svg class="play-indicator" viewBox="0 0 24 24" fill="currentColor"><path d="M12,2A10,10,0,1,0,22,12,10,10,0,0,0,12,2Zm-1,14a1.2,1.2,0,0,1-1.2-1.2V9.2a1.2,1.2,0,0,1,2.4,0v5.6A1.2,1.2,0,0,1,11,16Zm4.2-1.2a1.2,1.2,0,0,1-2.4,0V9.2a1.2,1.2,0,0,1,2.4,0Z"></path></svg>
-                        <span>${index + 1}. ${song.title || 'Unknown Title'}</span>
-                    `;
+                        <span>${song.title || 'Título Desconhecido'}</span>`;
                     
-                    // Add Drag and Drop event listeners for creating playlists
                     button.addEventListener('dragstart', handleDragStart);
                     button.addEventListener('dragend', handleDragEnd);
                     button.addEventListener('dragover', handleDragOver);
                     button.addEventListener('dragleave', handleDragLeave);
-                    button.addEventListener('drop', handleDropOnSong); // UPDATED: Changed function name
+                    button.addEventListener('drop', handleDropOnSong);
                     
                     li.appendChild(button);
                     playlistElement.appendChild(li);
                 });
             }
             
-            // UPDATED: Adds D&D event listeners to playlist buttons
             function renderPlaylists(playlists) {
                 playlistsListElement.innerHTML = '';
                 for (const playlistName in playlists) {
@@ -631,18 +441,13 @@
                     button.textContent = playlistName;
                     button.dataset.name = playlistName;
                     
-                    // Listener to view songs in a playlist
                     button.addEventListener('click', () => {
-                        const songsInPlaylist = playlists[playlistName].map(filename => {
-                            return allSongs.find(s => s.filename === filename);
-                        }).filter(Boolean); // Filter out any undefined songs
-                        
+                        const songsInPlaylist = playlists[playlistName].map(filename => allSongs.find(s => s.filename === filename)).filter(Boolean);
                         renderPlaylist(songsInPlaylist);
                         playlistTitleEl.textContent = playlistName;
                         showAllBtn.style.display = 'inline-block';
                     });
                     
-                    // NEW: Add D&D listeners to add songs to this playlist
                     button.addEventListener('dragover', handleDragOverOnPlaylist);
                     button.addEventListener('dragleave', handleDragLeaveOnPlaylist);
                     button.addEventListener('drop', handleDropOnPlaylist);
@@ -652,39 +457,54 @@
                 }
             }
 
-            // --- PLAYER LOGIC ---
+            function renderHistory(history) {
+                historyListElement.innerHTML = '';
+                history.forEach(song => {
+                    const li = document.createElement('li');
+                    const button = document.createElement('button');
+                    button.textContent = `${song.title} - ${song.artist}`;
+                    button.addEventListener('click', () => {
+                        // Encontra a música na lista principal e a toca
+                        const songIndex = allSongs.findIndex(s => s.filename === song.filename);
+                        if (songIndex > -1) {
+                            renderPlaylist(allSongs); // Garante que a lista principal está visível
+                            loadSong(songIndex);
+                        }
+                    });
+                    li.appendChild(button);
+                    historyListElement.appendChild(li);
+                });
+            }
+
+            // --- LÓGICA DO LEITOR ---
             function loadSong(index) {
                 if (index < 0 || index >= currentDisplaySongs.length) return;
-
                 currentSongIndex = index;
                 const song = currentDisplaySongs[index];
 
                 audioPlayer.src = `/api/stream/${song.filename}`;
-                trackTitle.textContent = song.title || 'Unknown Title';
-                trackArtist.textContent = song.artist || 'Unknown Artist';
-                albumCover.src = song.album_art_url || `https://placehold.co/60x60/4a00e0/FFF?text=${song.title[0] || 'S'}`;
+                trackTitle.textContent = song.title || 'Título Desconhecido';
+                trackArtist.textContent = song.artist || 'Artista Desconhecido';
+                albumCover.src = `https://placehold.co/60x60/4a00e0/FFF?text=${(song.title[0] || 'S').toUpperCase()}`;
 
-                document.querySelectorAll('#playlist li button').forEach(btn => {
-                    btn.classList.remove('playing');
-                });
+                document.querySelectorAll('#playlist li button').forEach(btn => btn.classList.remove('playing'));
                 const currentButton = document.querySelector(`#playlist button[data-index='${index}']`);
-                if (currentButton) {
-                    currentButton.classList.add('playing');
-                }
-
+                if (currentButton) currentButton.classList.add('playing');
                 playSong();
             }
 
             function playSong() {
-                if(currentSongIndex === -1 && currentDisplaySongs.length > 0) {
+                if (currentSongIndex === -1 && currentDisplaySongs.length > 0) {
                     loadSong(0);
                     return;
                 }
-                if(currentSongIndex !== -1) {
-                    isPlaying = true;
-                    audioPlayer.play();
-                    playIcon.style.display = 'none';
-                    pauseIcon.style.display = 'block';
+                if (currentSongIndex !== -1) {
+                    audioPlayer.play().then(() => {
+                        isPlaying = true;
+                        playIcon.style.display = 'none';
+                        pauseIcon.style.display = 'block';
+                        fetchHistory(); // Atualiza o histórico quando uma música começa a tocar
+                    }).catch(e => console.error("Erro ao tocar música:", e));
                 }
             }
 
@@ -697,234 +517,59 @@
 
             function playNext() {
                 let newIndex = currentSongIndex + 1;
-                if (newIndex >= currentDisplaySongs.length) {
-                    newIndex = 0; // Loop back to the start
-                }
+                if (newIndex >= currentDisplaySongs.length) newIndex = 0;
                 loadSong(newIndex);
             }
 
             function playPrev() {
                 let newIndex = currentSongIndex - 1;
-                if (newIndex < 0) {
-                    newIndex = currentDisplaySongs.length - 1; // Loop to the end
-                }
+                if (newIndex < 0) newIndex = currentDisplaySongs.length - 1;
                 loadSong(newIndex);
             }
 
             function updateProgress() {
                 if (audioPlayer.duration) {
-                    const progressPercent = (audioPlayer.currentTime / audioPlayer.duration) * 100;
-                    progressBar.style.width = `${progressPercent}%`;
+                    progressBar.style.width = `${(audioPlayer.currentTime / audioPlayer.duration) * 100}%`;
                     currentTimeEl.textContent = formatTime(audioPlayer.currentTime);
                     durationEl.textContent = formatTime(audioPlayer.duration);
                 }
             }
-
-            function setProgress(e) {
-                const width = this.clientWidth;
-                const clickX = e.offsetX;
-                const duration = audioPlayer.duration;
-                if (duration) {
-                    audioPlayer.currentTime = (clickX / width) * duration;
-                }
-            }
-
-            function setVolume(e) {
-                const width = this.clientWidth;
-                const clickX = e.offsetX;
-                const newVolume = clickX / width;
-                audioPlayer.volume = newVolume;
-                volumeProgress.style.width = `${newVolume * 100}%`;
-            }
-
+            
             function formatTime(seconds) {
                 const min = Math.floor(seconds / 60);
                 const sec = Math.floor(seconds % 60);
                 return `${min}:${sec < 10 ? '0' : ''}${sec}`;
             }
 
-            function filterPlaylist() {
-                const query = searchInput.value.toLowerCase();
-                const filteredSongs = allSongs.filter(song => {
-                    return (song.title && song.title.toLowerCase().includes(query)) ||
-                        (song.artist && song.artist.toLowerCase().includes(query));
-                });
-                renderPlaylist(filteredSongs);
-                // NEW: Reset title when searching for better UX
-                playlistTitleEl.textContent = query ? 'Resultados da Pesquisa' : 'Músicas';
-                showAllBtn.style.display = 'none'; 
-            }
-            
-            // --- DRAG & DROP HANDLERS ---
-            function handleDragStart(e) {
-                draggedItem = this;
-                e.dataTransfer.effectAllowed = 'move';
-                e.dataTransfer.setData('text/html', this.innerHTML);
-                setTimeout(() => this.style.opacity = '0.5', 0);
-            }
-            
-            function handleDragEnd(e) {
-                this.style.opacity = '1';
-                document.querySelectorAll('#playlist li button, #playlists-list li button').forEach(btn => btn.classList.remove('drag-over'));
-                draggedItem = null;
-            }
+            // --- MANIPULADORES DE EVENTOS (sem alterações na lógica principal) ---
+            function setProgress(e){const width=this.clientWidth,clickX=e.offsetX,duration=audioPlayer.duration;if(duration)audioPlayer.currentTime=clickX/width*duration}function setVolume(e){const width=this.clientWidth,clickX=e.offsetX,newVolume=clickX/width;audioPlayer.volume=newVolume,volumeProgress.style.width=`${newVolume*100}%`}function filterPlaylist(){const query=searchInput.value.toLowerCase(),filteredSongs=allSongs.filter(song=>(song.title&&song.title.toLowerCase().includes(query))||(song.artist&&song.artist.toLowerCase().includes(query)));renderPlaylist(filteredSongs),playlistTitleEl.textContent=query?'Resultados da Pesquisa':'Músicas',showAllBtn.style.display='none'}function handleDragStart(e){draggedItem=this,e.dataTransfer.effectAllowed="move",setTimeout(()=>this.style.opacity="0.5",0)}function handleDragEnd(e){this.style.opacity="1",document.querySelectorAll("#playlist li button, #playlists-list li button").forEach(btn=>btn.classList.remove("drag-over")),draggedItem=null}function handleDragOver(e){e.preventDefault(),this.classList.add("drag-over")}function handleDragLeave(e){this.classList.remove("drag-over")}async function handleDropOnSong(e){e.stopPropagation(),e.preventDefault(),this.classList.remove("drag-over");if(!draggedItem||draggedItem===this)return;const playlistName=prompt("Digite o nome para a nova playlist:","Minha Playlist");if(playlistName){try{await fetch("/api/playlists",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:playlistName,songs:[draggedItem.dataset.filename,this.dataset.filename]})}),fetchPlaylists()}catch(e){alert("Falha ao criar a playlist.")}}}function handleDragOverOnPlaylist(e){e.preventDefault(),this.classList.add("drag-over"),e.dataTransfer.dropEffect="copy"}function handleDragLeaveOnPlaylist(e){this.classList.remove("drag-over")}async function handleDropOnPlaylist(e){e.stopPropagation(),e.preventDefault(),this.classList.remove("drag-over");if(!draggedItem)return;const playlistName=this.dataset.name,draggedFilename=draggedItem.dataset.filename,currentSongs=userPlaylists[playlistName]||[];if(currentSongs.includes(draggedFilename))return void alert(`A música já está na playlist '${playlistName}'.`);const updatedSongs=[...currentSongs,draggedFilename];try{const response=await fetch("/api/playlists",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:playlistName,songs:updatedSongs})});if(!response.ok)throw new Error("Falha ao atualizar a playlist");alert(`Música adicionada à playlist '${playlistName}'!`),fetchPlaylists()}catch(e){console.error("Error updating playlist:",e),alert("Falha ao atualizar a playlist.")}}
 
-            function handleDragOver(e) {
-                if (e.preventDefault) e.preventDefault();
-                this.classList.add('drag-over');
-                return false;
-            }
-            
-            function handleDragLeave(e) {
-                 this.classList.remove('drag-over');
-            }
-
-            // UPDATED: This function now handles both creating a new playlist AND adding to a currently viewed one.
-            async function handleDropOnSong(e) {
-                e.stopPropagation(); 
-                e.preventDefault();
-                this.classList.remove('drag-over');
-
-                if (!draggedItem || draggedItem === this) return false;
-
-                const currentPlaylistName = playlistTitleEl.textContent;
-                const isViewingPlaylist = currentPlaylistName !== 'Músicas' && currentPlaylistName !== 'Resultados da Pesquisa' && userPlaylists[currentPlaylistName];
-
-                // SCENARIO 1: Add to the currently viewed playlist
-                if (isViewingPlaylist) {
-                    const draggedFilename = draggedItem.dataset.filename;
-                    let currentSongs = userPlaylists[currentPlaylistName] || [];
-
-                    if (currentSongs.includes(draggedFilename)) {
-                        alert(`A música já está na playlist '${currentPlaylistName}'.`);
-                        return false;
-                    }
-
-                    const updatedSongs = [...currentSongs, draggedFilename];
-
-                    try {
-                        const response = await fetch('/api/playlists', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ name: currentPlaylistName, songs: updatedSongs })
-                        });
-                        if (!response.ok) throw new Error('Falha ao atualizar a playlist');
-                        
-                        alert(`Música adicionada à playlist '${currentPlaylistName}'!`);
-                        await fetchPlaylists(); // Refresh all playlist data from server
-                        
-                        // Re-render the current playlist view with the new song
-                        const songsInPlaylist = updatedSongs.map(filename => {
-                            return allSongs.find(s => s.filename === filename);
-                        }).filter(Boolean);
-                        renderPlaylist(songsInPlaylist);
-
-                    } catch (error) {
-                        console.error("Error updating playlist:", error);
-                        alert("Falha ao atualizar a playlist.");
-                    }
-                } 
-                // SCENARIO 2: Create a new playlist
-                else {
-                    const draggedFilename = draggedItem.dataset.filename;
-                    const targetFilename = this.dataset.filename;
-                    const playlistName = prompt("Digite o nome para a nova playlist:", "Minha Playlist");
-                    if (playlistName) {
-                        try {
-                            await fetch('/api/playlists', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ name: playlistName, songs: [draggedFilename, targetFilename] })
-                            });
-                            fetchPlaylists(); // Refresh playlists
-                        } catch(error) {
-                            alert("Falha ao criar a playlist.");
-                        }
-                    }
-                }
-                return false;
-            }
-
-            // --- NEW: Handlers for dropping a song onto an existing playlist ---
-            function handleDragOverOnPlaylist(e) {
-                if (e.preventDefault) e.preventDefault();
-                this.classList.add('drag-over');
-                e.dataTransfer.dropEffect = 'copy';
-                return false;
-            }
-            
-            function handleDragLeaveOnPlaylist(e) {
-                this.classList.remove('drag-over');
-            }
-
-            async function handleDropOnPlaylist(e) {
-                e.stopPropagation();
-                e.preventDefault();
-                this.classList.remove('drag-over');
-                if (!draggedItem) return;
-
-                const playlistName = this.dataset.name;
-                const draggedFilename = draggedItem.dataset.filename;
-                const currentSongs = userPlaylists[playlistName] || [];
-
-                if (currentSongs.includes(draggedFilename)) {
-                    alert(`A música já está na playlist '${playlistName}'.`);
-                    return;
-                }
-                
-                const updatedSongs = [...currentSongs, draggedFilename];
-
-                try {
-                    const response = await fetch('/api/playlists', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ name: playlistName, songs: updatedSongs })
-                    });
-                    if (!response.ok) throw new Error('Falha ao atualizar a playlist');
-                    
-                    alert(`Música adicionada à playlist '${playlistName}'!`);
-                    fetchPlaylists(); // Refresh playlists to get the latest data
-                } catch (error) {
-                    console.error("Error updating playlist:", error);
-                    alert("Falha ao atualizar a playlist.");
-                }
-            }
-
-
-            // --- EVENT LISTENERS ---
-            playPauseBtn.addEventListener('click', () => {
-                isPlaying ? pauseSong() : playSong();
-            });
-
+            // --- REGISTO DOS EVENT LISTENERS ---
+            playPauseBtn.addEventListener('click', () => isPlaying ? pauseSong() : playSong());
             nextBtn.addEventListener('click', playNext);
             prevBtn.addEventListener('click', playPrev);
             audioPlayer.addEventListener('ended', playNext);
-
             audioPlayer.addEventListener('timeupdate', updateProgress);
             progressBarContainer.addEventListener('click', setProgress);
-
             volumeBarContainer.addEventListener('click', setVolume);
-
-            playlistElement.addEventListener('click', (e) => {
+            playlistElement.addEventListener('click', e => {
                 const button = e.target.closest('button');
-                if (button && button.dataset.index) {
-                    const songIndex = parseInt(button.dataset.index, 10);
-                    loadSong(songIndex);
-                }
+                if (button && button.dataset.index) loadSong(parseInt(button.dataset.index, 10));
             });
-
             searchInput.addEventListener('input', filterPlaylist);
-            
+            scanStatusEl.addEventListener('click', triggerScan);
             showAllBtn.addEventListener('click', () => {
                 renderPlaylist(allSongs);
                 playlistTitleEl.textContent = 'Músicas';
                 showAllBtn.style.display = 'none';
             });
 
-
-            // --- INITIALIZATION ---
+            // --- INICIALIZAÇÃO ---
+            checkScanStatus(); // Verifica o status inicial
             fetchAllSongs();
             fetchPlaylists();
+            fetchHistory();
+            scanInterval = setInterval(checkScanStatus, 5000); // Inicia a verificação periódica
         });
     </script>
 </body>

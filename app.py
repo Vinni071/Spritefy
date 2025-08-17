@@ -1,27 +1,14 @@
 import os
 import glob
-from flask import Flask, jsonify, send_from_directory, request, Response
+import json
+import threading
+from collections import deque
+from flask import Flask, jsonify, send_from_directory, request
 from mutagen.mp3 import MP3
 from mutagen.easyid3 import EasyID3
-import json
 
-# --------------------------------------------------------------------------
-# Este backend foi projetado com base nos requisitos do PDF.
-# Ele usa princípios de Orientação a Objetos, lida com manipulação de arquivos e
-# é estruturado para ser modular e extensível.
-#
-# Para Executar:
-# 1. Instale as dependências: pip install Flask mutagen
-# 2. Crie uma pasta chamada 'music' no mesmo diretório deste script.
-# 3. Coloque seus arquivos .mp3 dentro da pasta 'music'.
-# 4. Execute o script: python app.py
-# 5. Abra o arquivo HTML no seu navegador.
-# --------------------------------------------------------------------------
-
-
-# --- 1. Programação Orientada a Objetos e Modularidade ---
-# Definimos classes para nossos conceitos principais: Song e MusicLibrary.
-# Isso torna o código organizado, reutilizável e mais fácil de manter.
+# --- 1. Programação Orientada a Objetos ---
+# Classes coesas que representam as entidades principais do sistema.
 
 class Song:
     """Representa um único arquivo de música com seus metadados."""
@@ -29,13 +16,13 @@ class Song:
         self.filepath = filepath
         self.filename = os.path.basename(filepath)
         self.id = song_id
-        self.title = self.filename
+        # --- Valores Padrão ---
+        self.title = os.path.splitext(self.filename)[0]
         self.artist = "Artista Desconhecido"
         self.album = "Álbum Desconhecido"
         self.duration = 0
         
-        # --- 3. Manipulação de Arquivos e Serialização ---
-        # Aqui lemos os metadados diretamente dos arquivos de áudio.
+        # --- 3. Manipulação de Arquivos e Serialização (Leitura de Metadados) ---
         try:
             if filepath.lower().endswith('.mp3'):
                 audio = MP3(filepath, ID3=EasyID3)
@@ -57,72 +44,113 @@ class Song:
             "duration": self.duration
         }
 
-# --- 5. Padrões de Projeto: Singleton ---
-# Usamos um padrão Singleton para a MusicLibrary para garantir que haja apenas uma
-# instância a gerir a coleção de músicas em toda a aplicação.
-
+# --- 5. Padrão de Projeto: Singleton ---
+# Garante que haverá apenas uma instância da biblioteca de músicas,
+# centralizando o acesso e o estado dos dados.
 class MusicLibrary:
-    """Gerencia a coleção de todas as músicas e playlists."""
+    """Gerencia a coleção de músicas, playlists, fila e histórico."""
     _instance = None
-    PLAYLISTS_FILE = 'playlists.json' # NEW: File to store playlists
-
+    
+    # --- 2. Estruturas de Dados ---
+    # Usando uma variedade de estruturas de dados para diferentes finalidades.
     def __new__(cls, *args, **kwargs):
         if not cls._instance:
             cls._instance = super(MusicLibrary, cls).__new__(cls)
         return cls._instance
 
     def __init__(self, music_folder='music'):
-        # Esta verificação impede a reinicialização em chamadas subsequentes
         if not hasattr(self, 'initialized'):
             self.music_folder = music_folder
-            self.songs = []
-            self.playlists = {} 
-            self._load_playlists() # NEW: Load playlists on startup
-            self.scan_songs()
+            self.playlists_file = 'playlists.json'
+            
+            # Tabela Hash (dicionário) para busca rápida de músicas por nome de arquivo.
+            self.songs_map = {}
+            # Lista para manter a ordem das músicas.
+            self.songs_list = []
+            # Dicionário para armazenar as playlists.
+            self.playlists = {}
+            # Fila (deque) para gerenciar as próximas músicas a serem tocadas.
+            self.play_queue = deque()
+            # Pilha (lista) para manter o histórico de reprodução.
+            self.play_history = []
+            
+            self.is_scanning = False
+            self.scan_lock = threading.Lock() # Para garantir que apenas uma varredura ocorra por vez.
+
+            self._load_playlists()
+            self.scan_songs_async() # Inicia a primeira varredura de forma assíncrona.
             self.initialized = True
             
     def _load_playlists(self):
-        """NEW: Loads playlists from the JSON file if it exists."""
+        """Carrega as playlists do arquivo JSON, se ele existir."""
         try:
-            if os.path.exists(self.PLAYLISTS_FILE):
-                with open(self.PLAYLISTS_FILE, 'r') as f:
+            if os.path.exists(self.playlists_file):
+                with open(self.playlists_file, 'r') as f:
                     self.playlists = json.load(f)
-                    print(f"Playlists carregadas de {self.PLAYLISTS_FILE}")
         except Exception as e:
             print(f"Erro ao carregar o arquivo de playlists: {e}")
             self.playlists = {}
 
     def _save_playlists(self):
-        """NEW: Saves the current playlists to the JSON file."""
+        """Salva as playlists atuais no arquivo JSON (Serialização)."""
         try:
-            with open(self.PLAYLISTS_FILE, 'w') as f:
+            with open(self.playlists_file, 'w') as f:
                 json.dump(self.playlists, f, indent=4)
         except Exception as e:
             print(f"Erro ao salvar o arquivo de playlists: {e}")
 
-    def scan_songs(self):
-        """Verifica o diretório de músicas e preenche la lista de músicas."""
-        print(f"A procurar músicas no diretório '{self.music_folder}'...")
-        self.songs = []
-        # --- 2. Estruturas de Dados ---
-        # Usamos uma lista para armazenar as músicas e um dicionário (via glob) para pesquisa.
-        for index, filepath in enumerate(glob.glob(os.path.join(self.music_folder, '*.mp3'))):
-            self.songs.append(Song(filepath, index))
-        print(f"Encontradas {len(self.songs)} músicas.")
+    # --- 4. Programação Concorrente (Multithreading) ---
+    def scan_songs_async(self):
+        """Inicia a varredura de músicas em uma nova thread para não bloquear o servidor."""
+        if self.is_scanning:
+            return # Impede múltiplas varreduras simultâneas.
+            
+        scan_thread = threading.Thread(target=self._scan_songs_worker)
+        scan_thread.start()
+
+    def _scan_songs_worker(self):
+        """O trabalho real de varredura que executa na thread."""
+        with self.scan_lock:
+            self.is_scanning = True
+            print(f"Iniciando varredura de músicas no diretório '{self.music_folder}'...")
+            
+            temp_songs_list = []
+            temp_songs_map = {}
+            
+            for index, filepath in enumerate(glob.glob(os.path.join(self.music_folder, '*.mp3'))):
+                song = Song(filepath, index)
+                temp_songs_list.append(song)
+                temp_songs_map[song.filename] = song
+            
+            # Atualiza as estruturas de dados principais de forma atômica.
+            self.songs_list = temp_songs_list
+            self.songs_map = temp_songs_map
+            
+            print(f"Varredura concluída. {len(self.songs_list)} músicas encontradas.")
+            self.is_scanning = False
+
+    def get_scan_status(self):
+        """Retorna o status atual da varredura da biblioteca."""
+        return {"is_scanning": self.is_scanning, "song_count": len(self.songs_list)}
 
     def get_all_songs(self):
-        """Retorna uma lista de todas as músicas, serializadas como dicionários."""
-        return [song.to_dict() for song in self.songs]
+        """Retorna uma lista de todas as músicas."""
+        return [song.to_dict() for song in self.songs_list]
 
     def get_song_by_filename(self, filename):
-        """Encontra um objeto de música pelo seu nome de arquivo."""
-        for song in self.songs:
-            if song.filename == filename:
-                return song
-        return None
+        """Encontra um objeto de música pelo seu nome de arquivo usando a tabela hash."""
+        return self.songs_map.get(filename)
+        
+    def add_song_to_history(self, filename):
+        """Adiciona uma música à pilha de histórico."""
+        song = self.get_song_by_filename(filename)
+        if song:
+            # Para evitar duplicatas consecutivas no histórico
+            if not self.play_history or self.play_history[-1]['filename'] != song.filename:
+                self.play_history.append(song.to_dict())
 
 # --- Configuração da Aplicação Flask ---
-app = Flask(__name__, static_folder=None) # Não precisamos de uma pasta estática para esta configuração
+app = Flask(__name__, static_folder=None)
 library = MusicLibrary(music_folder='music')
 
 # --- Endpoints da API ---
@@ -134,53 +162,58 @@ def index():
     
 @app.route('/api/songs', methods=['GET'])
 def get_songs():
-    """Endpoint da API para obter a lista de todas as músicas disponíveis."""
+    """Endpoint para obter a lista de todas as músicas disponíveis."""
     return jsonify(library.get_all_songs())
 
 @app.route('/api/stream/<path:filename>')
 def stream_audio(filename):
-    """Endpoint da API para transmitir um arquivo de áudio específico."""
+    """Endpoint para transmitir um arquivo de áudio e registrar no histórico."""
     song = library.get_song_by_filename(filename)
     if not song:
         return "Música não encontrada", 404
-        
+    
+    library.add_song_to_history(filename)
     return send_from_directory(library.music_folder, filename)
-
-# --- Endpoint para gerenciar Playlists (Criar, Atualizar, Listar) ---
 
 @app.route('/api/playlists', methods=['GET', 'POST'])
 def handle_playlists():
-    """
-    Endpoint para criar, atualizar e listar playlists.
-    - GET: Retorna todas as playlists existentes.
-    - POST: Cria uma nova playlist ou atualiza uma existente.
-    """
+    """Endpoint para criar, atualizar e listar playlists."""
     if request.method == 'POST':
         data = request.get_json()
         if not data or 'name' not in data or 'songs' not in data:
             return jsonify({"error": "Dados inválidos. É necessário 'name' e 'songs'."}), 400
         
         playlist_name = data['name']
-        song_filenames = data['songs']
-        
-        # --- LÓGICA DE CRIAÇÃO E ATUALIZAÇÃO ---
-        library.playlists[playlist_name] = song_filenames
-        library._save_playlists() # NEW: Save changes to the file
-        
-        print(f"Playlist '{playlist_name}' criada/atualizada com as músicas: {song_filenames}")
-        
+        library.playlists[playlist_name] = data['songs']
+        library._save_playlists()
         return jsonify({"message": f"Playlist '{playlist_name}' salva com sucesso."}), 201
 
-    elif request.method == 'GET':
-        # Simplesmente retorna o dicionário completo de playlists.
-        return jsonify(library.playlists)
+    return jsonify(library.playlists)
 
+# --- Novos Endpoints para Concorrência e Estruturas de Dados ---
+
+@app.route('/api/scan', methods=['POST'])
+def trigger_scan():
+    """Endpoint para acionar uma nova varredura da biblioteca."""
+    if library.is_scanning:
+        return jsonify({"message": "Uma varredura já está em andamento."}), 429 # Too Many Requests
+    library.scan_songs_async()
+    return jsonify({"message": "Varredura da biblioteca iniciada em segundo plano."}), 202 # Accepted
+
+@app.route('/api/scan-status', methods=['GET'])
+def get_scan_status():
+    """Endpoint para verificar o status da varredura."""
+    return jsonify(library.get_scan_status())
+
+@app.route('/api/play-history', methods=['GET'])
+def get_play_history():
+    """Endpoint para obter o histórico de reprodução (Pilha)."""
+    # Retorna o histórico em ordem inversa (mais recente primeiro)
+    return jsonify(list(reversed(library.play_history)))
 
 if __name__ == '__main__':
-    # Verifica se o diretório de músicas existe
     if not os.path.exists('music'):
         os.makedirs('music')
         print("Diretório 'music' criado. Por favor, adicione os seus ficheiros .mp3 lá.")
     
-    # Executa a aplicação Flask
     app.run(debug=True, port=5000)
