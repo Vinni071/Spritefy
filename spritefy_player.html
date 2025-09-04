@@ -119,12 +119,14 @@
         
         .playlist-header {
             display: flex;
-            justify-content: space-between;
+            justify-content: center; /* Center items horizontally */
             align-items: center;
+            position: relative; /* For positioning the button */
         }
 
         .show-all-btn {
-            background: #7e3ff2;
+            position: absolute; /* Position button relative to header */
+            right: 0;
             border: none;
             color: white;
             padding: 8px 12px;
